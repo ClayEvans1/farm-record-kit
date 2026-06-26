@@ -29,6 +29,19 @@ class CliTests(unittest.TestCase):
         self.assertEqual(exit_code, 0)
         self.assertIn('"ok": true', stdout.getvalue())
 
+    def test_summary_outputs_sales_expenses_and_net(self):
+        root = Path(__file__).resolve().parents[1]
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        with redirect_stdout(stdout), redirect_stderr(stderr):
+            exit_code = main(["summary", str(root / "templates")])
+
+        self.assertEqual(exit_code, 0)
+        self.assertIn("Sales total:", stdout.getvalue())
+        self.assertIn("Expense total:", stdout.getvalue())
+        self.assertIn("Net after expenses:", stdout.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

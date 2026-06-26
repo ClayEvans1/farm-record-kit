@@ -41,6 +41,20 @@ class ValidatorTests(unittest.TestCase):
         self.assertFalse(result.ok)
         self.assertTrue(any(issue.code == "value.date" for issue in result.issues))
 
+    def test_expense_amount_must_be_nonnegative(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "expenses.csv"
+            path.write_text(
+                "date,vendor,category,description,amount\n"
+                "2026-06-01,Seed supplier,seeds,Lettuce seed,-1.00\n",
+                encoding="utf-8",
+            )
+
+            result = validate_file(path)
+
+        self.assertFalse(result.ok)
+        self.assertTrue(any(issue.code == "value.negative" for issue in result.issues))
+
     def test_unknown_schema_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "notes.csv"

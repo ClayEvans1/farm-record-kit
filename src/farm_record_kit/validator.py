@@ -23,6 +23,11 @@ SCHEMAS = {
         "required": ["crop", "category", "season", "status"],
         "status": ["active", "inactive"],
     },
+    "expenses": {
+        "required": ["date", "vendor", "category", "description", "amount"],
+        "date": ["date"],
+        "decimal": ["amount"],
+    },
 }
 
 
@@ -80,6 +85,8 @@ def _infer_schema(path: Path) -> str | None:
         return "market_sales"
     if "crop" in name:
         return "crops"
+    if "expense" in name or "cost" in name:
+        return "expenses"
     return None
 
 

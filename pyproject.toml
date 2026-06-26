@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "farm-record-kit"
-version = "0.1.0"
-description = "CSV templates and validation tools for small-farm harvest and market records."
+version = "0.2.0"
+description = "CSV templates, validation, and summaries for small-farm harvest, market, and expense records."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

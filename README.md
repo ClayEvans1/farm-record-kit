@@ -11,6 +11,7 @@ recordkeeping mistakes before a farm season's notes become hard to reconcile.
 - Harvest logs with dates, crop names, units, quantities, and destinations.
 - Market sales logs with items, quantities, unit prices, and line totals.
 - Crop lists with crop names, categories, seasons, and active/inactive status.
+- Expense logs with dates, vendors, categories, descriptions, and amounts.
 - Required columns, valid dates, numeric quantities, nonnegative prices, and
   sales line totals.
 
@@ -49,14 +50,34 @@ Print JSON:
 farm-record-kit validate --json templates
 ```
 
+Summarize sales, expenses, net, and harvest quantities:
+
+```bash
+farm-record-kit summary templates
+```
+
+Print a machine-readable summary:
+
+```bash
+farm-record-kit summary --json templates
+```
+
 ## Templates
 
 - `templates/harvest_log.csv`
 - `templates/market_sales.csv`
 - `templates/crops.csv`
+- `templates/expenses.csv`
 
 Copy the templates into your own farm folder and edit the rows. Keep the column
 headers unchanged if you want the validator to understand the file.
+
+## Project Status
+
+This project is intentionally small and spreadsheet-friendly. The next useful
+improvements are more templates, month-by-month summaries, and clearer
+validation messages for common market-garden workflows. Contributions and
+template requests are welcome through GitHub issues.
 
 ## License
 

@@ -21,3 +21,5 @@ jobs:
         run: python -m unittest discover -s tests
       - name: Validate templates
         run: farm-record-kit validate templates
+      - name: Summarize templates
+        run: farm-record-kit summary templates

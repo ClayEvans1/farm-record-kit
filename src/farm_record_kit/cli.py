@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import csv
+from decimal import Decimal, InvalidOperation
 import json
 from pathlib import Path
 import sys
@@ -16,10 +18,16 @@ def main(argv: list[str] | None = None) -> int:
     validate.add_argument("paths", nargs="+", help="CSV files or directories")
     validate.add_argument("--json", action="store_true", help="emit JSON")
 
+    summary = subparsers.add_parser("summary", help="summarize sales, expenses, and harvest quantities")
+    summary.add_argument("paths", nargs="+", help="CSV files or directories")
+    summary.add_argument("--json", action="store_true", help="emit JSON")
+
     args = parser.parse_args(argv)
 
     if args.command == "validate":
         return _validate(args.paths, as_json=args.json)
+    if args.command == "summary":
+        return _summary(args.paths, as_json=args.json)
 
     parser.error(f"unknown command: {args.command}")
     return 2
@@ -49,6 +57,75 @@ def _iter_csv_files(paths: list[str]) -> list[Path]:
         elif path.is_file() and path.suffix.lower() == ".csv":
             files.append(path)
     return files
+
+
+def _summary(paths: list[str], as_json: bool) -> int:
+    files = _iter_csv_files(paths)
+    if not files:
+        print("No CSV files found.", file=sys.stderr)
+        return 2
+
+    totals = {
+        "sales_total": Decimal("0"),
+        "expense_total": Decimal("0"),
+        "harvest_quantity_by_unit": {},
+    }
+
+    for path in files:
+        name = path.stem.lower().replace("-", "_")
+        if "market" in name or "sales" in name:
+            totals["sales_total"] += _sum_decimal_column(path, "line_total")
+        elif "expense" in name or "cost" in name:
+            totals["expense_total"] += _sum_decimal_column(path, "amount")
+        elif "harvest" in name:
+            _add_harvest_quantities(path, totals["harvest_quantity_by_unit"])
+
+    net = totals["sales_total"] - totals["expense_total"]
+    output = {
+        "sales_total": str(totals["sales_total"].quantize(Decimal("0.01"))),
+        "expense_total": str(totals["expense_total"].quantize(Decimal("0.01"))),
+        "net_after_expenses": str(net.quantize(Decimal("0.01"))),
+        "harvest_quantity_by_unit": {
+            unit: str(quantity.normalize()) for unit, quantity in sorted(totals["harvest_quantity_by_unit"].items())
+        },
+    }
+
+    if as_json:
+        print(json.dumps(output, indent=2))
+    else:
+        print(f"Sales total: {output['sales_total']}")
+        print(f"Expense total: {output['expense_total']}")
+        print(f"Net after expenses: {output['net_after_expenses']}")
+        for unit, quantity in output["harvest_quantity_by_unit"].items():
+            print(f"Harvest quantity ({unit}): {quantity}")
+
+    return 0
+
+
+def _sum_decimal_column(path: Path, column: str) -> Decimal:
+    total = Decimal("0")
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        for row in csv.DictReader(handle):
+            value = _parse_decimal(row.get(column, ""))
+            if value is not None:
+                total += value
+    return total
+
+
+def _add_harvest_quantities(path: Path, quantities: dict[str, Decimal]) -> None:
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        for row in csv.DictReader(handle):
+            unit = (row.get("unit") or "unknown").strip().lower()
+            value = _parse_decimal(row.get("quantity", ""))
+            if value is not None:
+                quantities[unit] = quantities.get(unit, Decimal("0")) + value
+
+
+def _parse_decimal(value: str) -> Decimal | None:
+    try:
+        return Decimal(value.replace(",", "").replace("$", "").strip())
+    except (InvalidOperation, AttributeError):
+        return None
 
 
 def _print_text(results: list[ValidationResult]) -> None:
